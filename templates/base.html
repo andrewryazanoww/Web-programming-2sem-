@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Flask Lab{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        body { padding-top: 20px; } /* Немного отступа сверху */
+        .data-block { margin-bottom: 20px; }
+        .data-block h4 { border-bottom: 1px solid #dee2e6; padding-bottom: 5px; margin-bottom: 10px; }
+        dt { font-weight: bold; }
+        dd { margin-left: 20px; word-break: break-all; } /* Перенос длинных строк */
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="mb-4">
+        <nav class="nav">
+          <a class="nav-link" href="{{ url_for('index') }}">Главная</a>
+          <a class="nav-link" href="{{ url_for('request_info') }}">Данные запроса</a>
+          <a class="nav-link" href="{{ url_for('phone_form') }}">Форма телефона</a>
+        </nav>
+        <hr>
+      </header>
+
+      <main>
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="mt-5 text-muted text-center text-small">
+        <p>© 2024 Рязанов А.Н</p>
+      </footer>
+    </div>
+
+    <!-- Optional JavaScript; choose one of the two! -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  </body>
+</html>

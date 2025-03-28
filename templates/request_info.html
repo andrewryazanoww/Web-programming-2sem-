@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Данные запроса - Flask Lab{% endblock %}
+
+{% block content %}
+  <h1>Данные текущего запроса</h1>
+
+  <div class="data-block">
+    <h4>Параметры URL (GET)</h4>
+    {% if url_params %}
+      <dl>
+        {% for key, value in url_params.items() %}
+          <dt>{{ key }}</dt>
+          <dd>{{ value }}</dd>
+        {% endfor %}
+      </dl>
+    {% else %}
+      <p>Нет GET параметров.</p>
+    {% endif %}
+  </div>
+
+  <div class="data-block">
+    <h4>Заголовки (Headers)</h4>
+    {% if headers %}
+      <dl>
+        {% for key, value in headers.items() %}
+          <dt>{{ key }}</dt>
+          <dd>{{ value }}</dd>
+        {% endfor %}
+      </dl>
+    {% else %}
+      <p>Нет заголовков (маловероятно).</p>
+    {% endif %}
+  </div>
+
+  <div class="data-block">
+    <h4>Cookies</h4>
+    {% if cookies %}
+      <dl>
+        {% for key, value in cookies.items() %}
+          <dt>{{ key }}</dt>
+          <dd>{{ value }}</dd>
+        {% endfor %}
+      </dl>
+    {% else %}
+      <p>Нет cookies.</p>
+    {% endif %}
+  </div>
+
+  <div class="data-block">
+    <h4>Данные формы (POST)</h4>
+    {% if form_data is not none %}
+       {% if form_data %}
+        <dl>
+            {% for key, value in form_data.items() %}
+            <dt>{{ key }}</dt>
+            <dd>{{ value }}</dd>
+            {% endfor %}
+        </dl>
+        {% else %}
+            <p>Форма была отправлена методом POST, но данных в ней нет.</p>
+        {% endif %}
+    {% else %}
+      <p>Запрос не содержит данных формы (вероятно, был GET запрос).</p>
+    {% endif %}
+  </div>
+{% endblock %}

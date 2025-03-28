@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - Flask Lab{% endblock %}
+
+{% block content %}
+  <h1>Лабораторная работа №2 Рязанов А.Н 231-3212</h1>
+  <p>Добро пожаловать! Используйте навигацию выше для перехода к разделам.</p>
+
+  <h2>Тестирование данных запроса</h2>
+  <p>Вы можете перейти на <a href="{{ url_for('request_info', param1='value1', param2='Привет Мир') }}">страницу данных запроса с GET-параметрами</a>.</p>
+
+  <p>Или отправьте простую форму методом POST:</p>
+  <form action="{{ url_for('request_info') }}" method="POST" class="mb-3">
+      <div class="mb-3">
+          <label for="testField1" class="form-label">Тестовое поле 1</label>
+          <input type="text" class="form-control" id="testField1" name="field_one" value="Значение 1">
+      </div>
+      <div class="mb-3">
+          <label for="testField2" class="form-label">Тестовое поле 2</label>
+          <input type="text" class="form-control" id="testField2" name="field_two" value="Значение 2">
+      </div>
+      <button type="submit" class="btn btn-primary">Отправить POST на /request-info</button>
+  </form>
+   <p>Cookie 'test_cookie' должен быть установлен при первом посещении этой страницы.</p>
+{% endblock %}

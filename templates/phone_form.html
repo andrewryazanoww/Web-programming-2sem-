@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Проверка номера телефона - Flask Lab{% endblock %}
+
+{% block content %}
+  <h1>Проверка формата номера телефона</h1>
+  <p>Введите номер телефона. Допустимые символы: цифры, пробелы, +, -, (, ).</p>
+  <p>Длина должна быть 10 цифр (или 11, если начинается с +7 или 8).</p>
+
+  <form method="POST">
+    <div class="mb-3">
+      <label for="phoneInput" class="form-label">Номер телефона:</label>
+      <input type="text"
+             class="{{ input_class }}"
+             id="phoneInput"
+             name="phone_number"
+             value="{{ phone_number_input }}" {# Восстанавливаем введенное значение #}
+             placeholder="+7 (123) 456-78-90"
+             required>
+      {% if error_message %}
+        <div class="invalid-feedback">
+          {{ error_message }}
+        </div>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary">Проверить</button>
+  </form>
+
+  {% if formatted_number %}
+    <div class="alert alert-success mt-4" role="alert">
+      Номер успешно проверен и отформатирован: <strong>{{ formatted_number }}</strong>
+    </div>
+  {% endif %}
+
+{% endblock %}
