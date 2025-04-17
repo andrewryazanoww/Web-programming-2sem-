@@ -1,0 +1,9 @@
+Flask>=2.0
+Flask-Login>=0.5
+Flask-SQLAlchemy>=2.5  # Добавлено для работы с БД
+Flask-WTF>=1.0
+Werkzeug>=2.0          # Используется для хеширования паролей
+gunicorn>=20.0         # WSGI сервер для Render
+python-dotenv>=0.15    # Для .env файла (опционально локально)
+WTForms[email]>=3.0
+SQLAlchemy>=1.4        # Основная библиотека ORM
