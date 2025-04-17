@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{# Импортируем макросы #}
+{% from "_form_macros.html" import render_field, render_submit_button %}
+
+{% block title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+<h1 class="mt-4 mb-4">{{ form_title }}</h1>
+
+{# Показываем логин, если редактируем (проверяем наличие user, т.к. он передается только при редактировании) #}
+{% if user and user.username %}
+    <p class="lead">Редактирование пользователя: <strong>{{ user.username }}</strong></p>
+{% endif %}
+
+<form method="POST" novalidate>
+    {{ form.hidden_tag() }} {# CSRF токен #}
+
+    {# --- УСЛОВНЫЙ РЕНДЕРИНГ ПОЛЕЙ --- #}
+    {# Эти поля будут рендериться ТОЛЬКО если они существуют в объекте form #}
+    {# В режиме редактирования они были удалены в app.py, поэтому if не сработает #}
+    {% if form.username %}
+        {{ render_field(form.username) }}
+    {% endif %}
+    {% if form.password %}
+        {{ render_field(form.password) }}
+    {% endif %}
+    {% if form.confirm_password %}
+        {{ render_field(form.confirm_password) }}
+    {% endif %}
+
+    {# Эти поля есть всегда (фамилия, имя, отчество, роль) #}
+    {{ render_field(form.last_name) }}
+    {{ render_field(form.first_name) }}
+    {{ render_field(form.middle_name) }}
+    {{ render_field(form.role) }}
+
+    <div class="mt-4">
+         {{ render_submit_button(form.submit) }}
+         {# Кнопка отмены возвращает на главную страницу #}
+         <a href="{{ url_for('index') }}" class="btn btn-secondary ms-2">Отмена</a>
+    </div>
+
+</form>
+{% endblock %}
