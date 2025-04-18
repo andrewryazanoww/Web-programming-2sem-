@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_form_macros.html" import render_field, render_submit_button %} {# Можно использовать макрос #}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <h1 class="text-center mt-4 mb-4">Вход</h1>
+        <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}" novalidate>
+            {{ form.hidden_tag() }}
+
+            {{ render_field(form.username) }}
+            {{ render_field(form.password) }}
+            {{ render_field(form.remember) }} {# Checkbox #}
+
+            <div class="d-grid gap-2 mt-4">
+                 {{ render_submit_button(form.submit) }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% macro render_field(field) %} {# УБРАН is_edit_mode #}
+    <div class="mb-3">
+      {# Отображаем метку поля #}
+      {{ field.label(class="form-label") }}
+      {# Определяем базовый класс для поля #}
+      {% set field_class = "form-control" %}
+      {# Адаптируем класс и разметку для разных типов полей #}
+      {% if field.type == 'BooleanField' %}
+        {% set field_class = "form-check-input" %}
+         <div class="form-check">
+             {# Добавляем is-invalid если есть ошибки #}
+             {{ field(class=field_class + (" is-invalid" if field.errors else "")) }}
+         </div>
+      {% elif field.type == 'QuerySelectField' %}
+        {% set field_class = "form-select" %}
+         {# Добавляем is-invalid если есть ошибки #}
+         {{ field(class=field_class + (" is-invalid" if field.errors else "")) }}
+      {% else %}
+         {# Для остальных полей (StringField, PasswordField и т.д.) #}
+         {# Добавляем is-invalid если есть ошибки #}
+         {# **kwargs позволяет передать доп. атрибуты в поле (не используется здесь, но полезно) #}
+         {{ field(class=field_class + (" is-invalid" if field.errors else ""), **kwargs) }}
+      {% endif %}
+
+      {# Отображение ошибок валидации для поля #}
+      {% if field.errors %}
+        <div class="invalid-feedback d-block"> {# d-block гарантирует отображение #}
+          {# Выводим каждую ошибку валидации с новой строки #}
+          {% for error in field.errors %}
+            <span>{{ error }}</span><br>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {# Отображение описания поля, если оно есть #}
+      {% if field.description %}
+        <div class="form-text">{{ field.description }}</div>
+      {% endif %}
+    </div>
+{% endmacro %}
+
+{# Макрос для кнопки submit #}
+{% macro render_submit_button(field) %}
+   {{ field(class="btn btn-primary") }}
+{% endmacro %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Список пользователей{% endblock %}
+
+{% block content %}
+<h1 class="mt-4 mb-4">Список пользователей</h1>
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">ФИО</th>
+            <th scope="col">Роль</th>
+            <th scope="col">Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <th scope="row">{{ loop.index }}</th>
+            <td>{{ user.full_name }}</td>
+            <td>{{ user.role.name if user.role else 'Нет роли' }}</td>
+            <td>
+                <a href="{{ url_for('view_user', user_id=user.id) }}" class="btn btn-sm btn-info me-1">Просмотр</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning me-1">Редактировать</a>
+                    <button type="button" class="btn btn-sm btn-danger"
+                            data-bs-toggle="modal" data-bs-target="#deleteUserModal"
+                            data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}">
+                        Удалить
+                    </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="text-center">Пользователи не найдены.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if current_user.is_authenticated %}
+<div class="mt-3">
+    <a href="{{ url_for('create_user') }}" class="btn btn-primary">Создать пользователя</a>
+</div>
+{% endif %}
+
+{# --- Модальное окно подтверждения удаления --- #}
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="deleteUserModalLabel">Подтверждение удаления</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Вы уверены, что хотите удалить пользователя <strong id="deleteUserName"></strong>?
+      </div>
+      <div class="modal-footer">
+         {# Форма отправляет POST запрос на URL удаления конкретного пользователя #}
+        <form id="deleteForm" method="POST" action="#"> {# action будет установлен через JS #}
+             {# CSRF токен можно добавить здесь, если используется Flask-WTF CSRF глобально #}
+             {# Но т.к. это простой POST, CSRF не строго обязателен, но рекомендуется #}
+             {# <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> #}
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+            <button type="submit" class="btn btn-danger">Да</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{# --- Скрипт для модального окна --- #}
+{% block scripts %}
+{{ super() }} {# Включаем скрипты из base.html (Bootstrap) #}
+<script>
+    const deleteModal = document.getElementById('deleteUserModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', event => {
+            // Кнопка, которая вызвала модальное окно
+            const button = event.relatedTarget;
+            // Извлекаем данные из атрибутов data-*
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+
+            // Обновляем содержимое модального окна
+            const modalUserName = deleteModal.querySelector('#deleteUserName');
+            const deleteForm = deleteModal.querySelector('#deleteForm');
+
+            modalUserName.textContent = userName;
+            // Устанавливаем правильный URL для action формы
+            deleteForm.action = `/user/${userId}/delete`; // Формируем URL динамически
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{# templates/_pagination.html (Исправленный) #}
+{# УБИРАЕМ **kwargs из определения макроса #}
+{% macro render_pagination(pagination, endpoint) %}
+  {% if pagination and pagination.pages > 1 %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      {# Ссылка на предыдущую страницу #}
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        {# Передаем только page в url_for #}
+        <a class="page-link" href="{% if pagination.has_prev %}{{ url_for(endpoint, page=pagination.prev_num) }}{% else %}#{% endif %}" aria-label="Previous">
+          <span aria-hidden="true">«</span>
+        </a>
+      </li>
+      {# Номера страниц #}
+      {% for page_num in pagination.iter_pages() %}
+          <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+            {# Передаем только page в url_for #}
+            <a class="page-link" href="{{ url_for(endpoint, page=page_num) }}">{{ page_num }}</a>
+          </li>
+      {% endfor %}
+      {# Ссылка на следующую страницу #}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        {# Передаем только page в url_for #}
+        <a class="page-link" href="{% if pagination.has_next %}{{ url_for(endpoint, page=pagination.next_num) }}{% else %}#{% endif %}" aria-label="Next">
+          <span aria-hidden="true">»</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+{% endmacro %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Просмотр: {{ user.username }}{% endblock %}
+
+{% block content %}
+<h1 class="mt-4 mb-4">Просмотр пользователя: {{ user.username }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">{{ user.id }}</dd>
+
+            <dt class="col-sm-3">Логин</dt>
+            <dd class="col-sm-9">{{ user.username }}</dd>
+
+            <dt class="col-sm-3">Фамилия</dt>
+            <dd class="col-sm-9">{{ user.last_name }}</dd>
+
+            <dt class="col-sm-3">Имя</dt>
+            <dd class="col-sm-9">{{ user.first_name }}</dd>
+
+            <dt class="col-sm-3">Отчество</dt>
+            <dd class="col-sm-9">{{ user.middle_name if user.middle_name else '-' }}</dd>
+
+            <dt class="col-sm-3">Роль</dt>
+            <dd class="col-sm-9">{{ user.role.name if user.role else 'Нет роли' }}</dd>
+
+             <dt class="col-sm-3">Дата создания</dt>
+             {# Форматируем дату для лучшего отображения #}
+            <dd class="col-sm-9">{{ user.created_at.strftime('%d.%m.%Y %H:%M:%S') if user.created_at else '-' }}</dd>
+        </dl>
+    </div>
+    <div class="card-footer">
+         <a href="{{ url_for('index') }}" class="btn btn-secondary">Назад к списку</a>
+          {% if current_user.is_authenticated %}
+         <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-warning">Редактировать</a>
+         {% endif %}
+    </div>
+</div>
+{% endblock %}
