@@ -1,0 +1,51 @@
+{# Этот шаблон предполагает, что 'form' и 'user_review' (если есть) передаются из View #}
+{# А также что 'current_user' доступен из Flask-Login #}
+
+<section class="review-form-section mt-5">
+    {% if current_user.is_authenticated %}
+        {% if user_review %}
+            <h2 class="mb-3 text-center text-uppercase font-weight-bold">Ваш отзыв:</h2>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ user_review.user.full_name }} <small class="text-muted">{{ user_review.created_at.strftime('%Y-%m-%d %H:%M') }}</small></h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Оценка: {{ user_review.rating }} / 5</h6>
+                    <p class="card-text">{{ user_review.text }}</p>
+                </div>
+            </div>
+            {# Здесь можно добавить кнопку "Редактировать отзыв", если это нужно #}
+        {% else %}
+            <h2 class="mb-3 text-center text-uppercase font-weight-bold">Оставить отзыв</h2>
+            <form method="POST">
+                {{ form.hidden_tag() }} {# CSRF токен #}
+                <div class="mb-3">
+                    {{ form.rating.label(class="form-label") }}
+                    {{ form.rating(class="form-select") }}
+                    {% if form.rating.errors %}
+                        <div class="text-danger">
+                            {% for error in form.rating.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.text.label(class="form-label") }}
+                    {{ form.text(class="form-control", rows=5) }}
+                    {% if form.text.errors %}
+                        <div class="text-danger">
+                            {% for error in form.text.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {{ form.submit(class="btn btn-primary") }}
+            </form>
+        {% endif %}
+    {% else %}
+        <p class="text-center">Чтобы оставить отзыв, пожалуйста, <a href="{{ url_for('auth.login') }}">войдите</a>.</p>
+    {% endif %}
+
+    {# Отображение флеш-сообщений, если они есть #}
+    {# Этот блок лучше разместить в base.html, как у вас уже и сделано #}
+</section>

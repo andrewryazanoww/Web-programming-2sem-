@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from 'pagination.html' import render_pagination %} {# <--- Импортируем макрос пагинации #}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Все отзывы для курса "{{ course.name }}"</h1> {# Убедитесь, что у вашего объекта course есть .name #}
+
+    {# Форма фильтрации #}
+    <div class="mb-4">
+        <form action="{{ url_for('courses.course_reviews', course_id=course.id) }}" method="get" class="d-flex align-items-center">
+            <label for="sort_order" class="me-2">Сортировать по:</label>
+            <select name="sort" id="sort_order" class="form-select w-auto me-2">
+                <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>По новизне</option>
+                <option value="positive" {% if sort_order == 'positive' %}selected{% endif %}>Сначала положительные</option>
+                <option value="negative" {% if sort_order == 'negative' %}selected{% endif %}>Сначала отрицательные</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Применить</button>
+        </form>
+    </div>
+
+    <hr>
+
+    {# Отображение отзывов #}
+    {% if reviews_pagination.items %}
+        {% for review in reviews_pagination.items %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ review.user.full_name }} <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</small></h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Оценка: {{ review.rating }} / 5</h6>
+                    <p class="card-text">{{ review.text }}</p>
+                </div>
+            </div>
+        {% endfor %}
+
+        {# Пагинация #}
+        {{ render_pagination(reviews_pagination, 'courses.course_reviews', {'course_id': course.id, 'sort': sort_order}) }}
+
+    {% else %}
+        <p class="text-center">Отзывов пока нет.</p>
+    {% endif %}
+
+    {# <--- НАЧАЛО: ВКЛЮЧЕНИЕ ФОРМЫ ОТЗЫВА #}
+    {% include 'courses/_review_form.html' %}
+    {# <--- КОНЕЦ: ВКЛЮЧЕНИЕ ФОРМЫ ОТЗЫВА #}
+</div>
+{% endblock %}
