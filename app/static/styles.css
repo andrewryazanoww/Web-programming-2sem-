@@ -1,0 +1,197 @@
+/* app/static/css/styles.css */
+
+/* Переменные для цветовой схемы */
+:root {
+    --primary-color: #007bff; /* Основной синий Bootstrap */
+    --primary-color-darker: #0056b3;
+    --secondary-color: #6c757d; /* Серый Bootstrap */
+    --light-color: #f8f9fa; /* Светло-серый Bootstrap */
+    --white-color: #ffffff;
+    --text-color: #212529; /* Основной цвет текста Bootstrap */
+    --text-color-muted: #6c757d;
+    --border-color: #dee2e6;
+    --font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --body-bg: var(--white-color);
+    --body-color: var(--text-color);
+}
+
+body {
+    font-family: var(--font-family-sans-serif);
+    background-color: var(--body-bg);
+    color: var(--body-color);
+    padding-top: 56px; /* Отступ для фиксированного навбара Bootstrap, если используется .fixed-top */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main.main {
+    flex-grow: 1; /* Чтобы main занимал все доступное пространство */
+}
+
+/* Стили для навбара (дополняем Bootstrap) */
+.navbar.bg-dark {
+    background-color: var(--primary-color) !important; /* Переопределяем Bootstrap bg-dark на наш синий */
+}
+
+.navbar-brand .img-fluid {
+    max-height: 40px; /* Размер логотипа */
+}
+
+/* Стили для кнопок */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-color-darker);
+    border-color: var(--primary-color-darker);
+}
+
+.btn-outline-light { /* Кнопка "Войти" на темном фоне навбара */
+    color: var(--white-color);
+    border-color: var(--white-color);
+}
+.btn-outline-light:hover {
+    color: var(--primary-color);
+    background-color: var(--white-color);
+    border-color: var(--white-color);
+}
+
+/* Карточки и таблицы */
+.card {
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* Футер */
+footer.bg-dark {
+    background-color: var(--primary-color) !important; /* Синий футер */
+    color: var(--white-color);
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+footer small.text-muted {
+    color: rgba(255, 255, 255, 0.7) !important; /* Делаем текст в футере светлее */
+}
+
+/* Выделение активных ссылок в навбаре (если Bootstrap не справляется) */
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link.show {
+    color: var(--white-color);
+    font-weight: 500; /* Немного жирнее */
+}
+
+/* Выравнивание для .dropdown-menu-end (если нужно) */
+.dropdown-menu-end {
+    right: 0;
+    left: auto;
+}
+
+/* Стили для форм */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    color: var(--primary-color); /* Цвет метки при фокусе/заполнении */
+}
+
+/* Кастомные стили для элементов из задания (если нужны) */
+.title-area { /* Для страницы show.html из вашего примера */
+    background-color: var(--secondary-color); /* Или другое изображение */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: white;
+    font-size: 1.5rem;
+    min-height: calc(60vh); /* Уменьшил немного */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.title-area .overlay-content { /* Если нужен внутренний блок для контента на фоне */
+    background-color: rgba(0, 0, 0, 0.60);
+    padding: 3rem;
+    border-radius: 0.5rem;
+}
+
+
+.courses-list .row:hover {
+    cursor: pointer;
+    background-color: var(--light-color);
+    border: 1px solid var(--primary-color) !important;
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.course-logo {
+    min-width: 150px; /* Немного уменьшил */
+    width: 100%;
+    height: 150px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    border: 1px solid var(--border-color);
+    border-radius: .25rem;
+}
+
+.rating span {
+    color: #ffc107; /* Желтый для звезд */
+}
+
+.alerts-area .alert { /* Убираем скругление у алертов, если они в .alerts-area */
+    border-radius: 0;
+}
+
+/* Убираем стандартный отступ у последнего элемента в main, если футер прижат */
+main.main > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Стили для модального окна */
+.modal-header {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+}
+.modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%); /* Делаем крестик белым */
+}
+
+/* Дополнительные стили для вашего проекта... */
+:root {
+    --primary-color: #007bff; /* Основной синий Bootstrap, который вы используете */
+    /* Если вы хотите ДРУГОЙ синий, измените здесь, например: */
+    /* --primary-color: #0d6efd; /* Чуть другой синий Bootstrap */
+    /* --primary-color: #183D5D; /* Более темный, корпоративный синий */
+    --primary-color-darker: #0056b3; /* Для hover эффектов */
+    /* ... другие переменные ... */
+}
+
+/* Это правило должно было переопределить стандартный bg-dark Bootstrap на ваш --primary-color */
+.navbar.bg-dark {
+    background-color: var(--primary-color) !important;
+}
+footer.bg-dark {
+    background-color: var(--primary-color) !important;
+    color: var(--white-color);
+}
+
+/* Отступ для фиксированного навбара, если он есть */
+body {
+    padding-top: 70px; /* Примерно высота вашего навбара */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+main.main {
+    flex-grow: 1;
+}
+
+/* Новый стиль для сохранения переносов строк и пробелов */
+.preserve-whitespace {
+    white-space: pre-wrap;  /* Сохраняет пробелы и переносы строк, переносит длинные строки */
+    word-wrap: break-word;  /* Для дополнительной совместимости с переносом слов */
+}
