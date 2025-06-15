@@ -1,0 +1,164 @@
+{# app/templates/equipment/index.html #}
+{% extends "base.html" %}
+{% from "pagination.html" import render_pagination with context %}
+
+{% block title %}{{ title if title else "Список оборудования" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title if title else "Список оборудования" }}</h1>
+        {# Кнопка "Добавить оборудование" только для админов #}
+        {% if current_user.is_authenticated and current_user.is_admin() %}
+            <a href="{{ url_for('equipment.new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Добавить оборудование
+            </a>
+        {% endif %}
+    </div>
+
+    {# TODO: Форма фильтрации (позже) #}
+    {#
+    <form method="GET" action="{{ url_for('equipment.index') }}" class="mb-4 p-3 border rounded bg-light">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="filter_name" class="form-label">Название</label>
+                <input type="text" class="form-control form-control-sm" id="filter_name" name="name" value="{{ request.args.get('name', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="filter_category_id" class="form-label">Категория</label>
+                <select class="form-select form-select-sm" id="filter_category_id" name="category_id">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.args.get('category_id')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filter_status" class="form-label">Статус</label>
+                <select class="form-select form-select-sm" id="filter_status" name="status">
+                    <option value="">Все статусы</option>
+                    {% for status_val in statuses %}
+                        <option value="{{ status_val }}" {% if request.args.get('status') == status_val %}selected{% endif %}>{{ status_val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary btn-sm w-100">Применить фильтр</button>
+            </div>
+        </div>
+    </form>
+    #}
+
+    {% if equipment_list %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Название</th>
+                    <th>Инв. номер</th>
+                    <th>Категория</th>
+                    <th>Статус</th>
+                    <th>Дата покупки</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in equipment_list %}
+                <tr>
+                    <td>{{ loop.index + pagination.first -1 if pagination else loop.index }}</td>
+                    <td>
+                        <a href="{{ url_for('equipment.show', equipment_id=item.id) }}">{{ item.name }}</a>
+                    </td>
+                    <td>{{ item.inventory_number }}</td>
+                    <td>{{ item.category.name if item.category else 'N/A' }}</td>
+                    <td>
+                        {% if item.status == 'В эксплуатации' %}
+                            <span class="badge bg-success">{{ item.status }}</span>
+                        {% elif item.status == 'На ремонте' %}
+                            <span class="badge bg-warning text-dark">{{ item.status }}</span>
+                        {% elif item.status == 'Списано' %}
+                            <span class="badge bg-danger">{{ item.status }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ item.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.purchase_date.strftime('%d.%m.%Y') if item.purchase_date else '' }}</td>
+                    <td>
+                        <a href="{{ url_for('equipment.show', equipment_id=item.id) }}" class="btn btn-sm btn-outline-info me-1" title="Просмотр">👁️</a>
+                        {% if current_user.is_authenticated and current_user.is_admin() %}
+                            <a href="{{ url_for('equipment.edit', equipment_id=item.id) }}" class="btn btn-sm btn-outline-warning me-1" title="Редактировать">✏️</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger me-1" title="Удалить"
+                                    data-bs-toggle="modal" data-bs-target="#deleteEquipmentModal"
+                                    data-equipment-id="{{ item.id }}"
+                                    data-equipment-name="{{ item.name }}">
+                                🗑️
+                            </button>
+                        {% endif %}
+                        {% if current_user.is_authenticated and current_user.role and (current_user.is_admin() or current_user.is_tech_specialist()) %}
+                            <a href="{{ url_for('service.add_service_record', equipment_id=item.id) }}" class="btn btn-sm btn-outline-success" title="Добавить запись об обслуживании">🛠️</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination %}
+        {{ render_pagination(pagination, 'equipment.index', params=request.args) }}
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info mt-3" role="alert">
+        Список оборудования пуст.
+        {% if current_user.is_authenticated and current_user.is_admin() %}
+            Вы можете <a href="{{ url_for('equipment.new') }}" class="alert-link">добавить новое оборудование</a>.
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{# Модальное окно для подтверждения удаления оборудования #}
+<div class="modal fade" id="deleteEquipmentModal" tabindex="-1" aria-labelledby="deleteEquipmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteEquipmentModalLabel">Удаление оборудования</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Вы уверены, что хотите удалить оборудование <strong id="deleteEquipmentNameModal"></strong>?
+        <p class="text-danger mt-2"><small>Внимание: будут удалены все связанные записи об обслуживании и фотография!</small></p>
+      </div>
+      <div class="modal-footer">
+        <form id="deleteEquipmentFormModal" method="POST" action="#"> {# action будет установлен JS #}
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет, отмена</button>
+          <button type="submit" class="btn btn-danger">Да, удалить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // JS для модального окна удаления оборудования
+    const deleteModalElement = document.getElementById('deleteEquipmentModal');
+    if (deleteModalElement) {
+        deleteModalElement.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const equipmentId = button.getAttribute('data-equipment-id');
+            const equipmentName = button.getAttribute('data-equipment-name');
+            
+            const modalNameElement = deleteModalElement.querySelector('#deleteEquipmentNameModal');
+            const deleteForm = deleteModalElement.querySelector('#deleteEquipmentFormModal');
+
+            if (modalNameElement) modalNameElement.textContent = equipmentName;
+            // Важно: используем url_for, если это возможно (нужно передать его в JS)
+            // или формируем URL вручную, как здесь.
+            if (deleteForm) deleteForm.action = `/equipment/${equipmentId}/delete`;
+        });
+    }
+</script>
+{% endblock %}
