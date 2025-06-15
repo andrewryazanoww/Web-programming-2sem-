@@ -1,19 +1,16 @@
 {# app/templates/equipment/new.html #}
 {% extends "base.html" %}
-{% block title %}{{ title if title else "Добавить новое оборудование"}}{% endblock %}
+{% block title %}{{ title if title else "Добавить оборудование" }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center"> {# Центрируем форму #}
-        <div class="col-lg-8 col-md-10"> {# Ограничиваем ширину для лучшего вида #}
-            <h1 class="mb-4 text-center">Добавить новое оборудование</h1>
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">{{ title if title else "Добавить новое оборудование" }}</h1>
             <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    {# enctype="multipart/form-data" ОБЯЗАТЕЛЕН для загрузки файлов #}
+                <div class="card-body">
                     <form method="POST" action="{{ url_for('equipment.create') }}" enctype="multipart/form-data" novalidate>
-                        {# Включаем общую часть формы из _form.html #}
-                        {# Передаем form, который был создан в view-функции equipment.new #}
-                        {% include "equipment/_form.html" %}
+                        {% include "equipment/_form.html" %} {# Включаем общую часть формы #}
                     </form>
                 </div>
             </div>

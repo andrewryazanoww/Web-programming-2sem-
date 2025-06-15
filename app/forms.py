@@ -1,13 +1,11 @@
 # app/forms.py
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed # Убрал FileRequired, т.к. фото не обязательно
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, DateField, DecimalField, RadioField
-from wtforms.validators import DataRequired, Length, EqualTo, Email, Optional, Regexp, NumberRange, ValidationError
+from flask_wtf.file import FileField, FileAllowed
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, DateField, DecimalField, RadioField, SelectMultipleField
+from wtforms.validators import DataRequired, Length, EqualTo, Optional, NumberRange, ValidationError
 
-# Импортируем db и модели, необходимые для заполнения полей SelectField
-# или для кастомных валидаторов (если понадобятся)
-from .extensions import db
-from .models import Category, User, Role # Добавил Role для ServiceRecordForm
+from .extensions import db # Может понадобиться для динамического заполнения choices в __init__ (хотя лучше в роутах)
+from .models import Category, User, Role # Role для ServiceRecordForm
 
 # --- Формы для аутентификации ---
 class LoginForm(FlaskForm):
@@ -16,91 +14,66 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('Запомнить меня')
     submit = SubmitField('Войти')
 
-# Если понадобится форма регистрации (по заданию она не требуется через UI)
-# class RegistrationForm(FlaskForm):
-#     login = StringField('Логин', validators=[DataRequired(), Length(min=4, max=100)])
-#     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=6)])
-#     confirm_password = PasswordField('Повторите пароль', validators=[DataRequired(), EqualTo('password')])
-#     last_name = StringField('Фамилия', validators=[DataRequired()])
-#     first_name = StringField('Имя', validators=[DataRequired()])
-#     middle_name = StringField('Отчество', validators=[Optional()])
-#     submit = SubmitField('Зарегистрироваться')
-
 # --- Формы для оборудования ---
 class EquipmentForm(FlaskForm):
     name = StringField('Название оборудования', validators=[DataRequired("Поле 'Название' обязательно для заполнения.")])
     inventory_number = StringField('Инвентарный номер', validators=[DataRequired("Поле 'Инвентарный номер' обязательно для заполнения.")])
-    
-    # Выпадающий список для категорий
-    # coerce=int нужен, чтобы значение из формы корректно преобразовывалось в ID
-    # choices будут заполняться в view-функции
     category_id = SelectField('Категория', coerce=int, validators=[DataRequired("Пожалуйста, выберите категорию.")])
-    
     purchase_date = DateField('Дата покупки (ГГГГ-ММ-ДД)', format='%Y-%m-%d', validators=[DataRequired("Поле 'Дата покупки' обязательно для заполнения.")])
     cost = DecimalField('Стоимость', places=2, validators=[DataRequired("Поле 'Стоимость' обязательно для заполнения."), NumberRange(min=0.01, message="Стоимость должна быть положительным числом.")])
-    
-    # Радиокнопки для статуса
-    # Значения должны точно совпадать с теми, что в db.Enum в модели Equipment
     status_choices = [
         ('В эксплуатации', 'В эксплуатации'),
         ('На ремонте', 'На ремонте'),
         ('Списано', 'Списано')
     ]
     status = RadioField('Статус', choices=status_choices, validators=[DataRequired("Пожалуйста, выберите статус.")], default='В эксплуатации')
-    
     notes = TextAreaField('Примечание (опционально)', validators=[Optional(), Length(max=5000)])
-    
-    # Поле для загрузки изображения
     image = FileField('Фотография оборудования (опционально)', validators=[
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Разрешены только изображения форматов: jpg, jpeg, png, gif!')
     ])
-    
+    responsible_person_ids = SelectMultipleField(
+        'Ответственные лица',
+        coerce=int,
+        validators=[Optional()]
+    )
     submit = SubmitField('Сохранить')
 
-    # Конструктор для заполнения choices для category_id
     def __init__(self, *args, **kwargs):
         super(EquipmentForm, self).__init__(*args, **kwargs)
-        # Заполняем категории. Это должно быть сделано в контексте приложения,
-        # поэтому лучше передавать choices из view или использовать QuerySelectField,
-        # но для простоты SelectField можно заполнить так, если db доступен при создании формы.
-        # Однако, более правильный подход - заполнять choices в роуте.
-        # Здесь мы предполагаем, что категории будут переданы в роут и установлены там.
-        # Если используется QuerySelectField, он сам позаботится о запросе.
-        # Оставим это для заполнения в view-функции:
-        # self.category_id.choices = [(cat.id, cat.name) for cat in Category.query.order_by(Category.name).all()]
-        pass # choices для category_id будут установлены в view
+        # Заполнение choices для category_id и responsible_person_ids
+        # будет происходить в view-функциях (роутах).
+        pass
 
 
 # --- Формы для истории обслуживания ---
 class ServiceRecordForm(FlaskForm):
     service_type = StringField('Тип обслуживания/работ', validators=[DataRequired("Укажите тип обслуживания.")], description="Например: Ремонт, Плановое ТО, Замена картриджа")
     description = TextAreaField('Описание работ и комментарий', validators=[DataRequired("Опишите выполненные работы.")])
-    # Поле для выбора исполнителя (Тех. специалисты и Администраторы)
-    # coerce=int, чтобы значение корректно преобразовывалось в ID
-    # validators=[Optional()] означает, что поле может быть не заполнено (если исполнитель не из списка)
+    planned_date = DateField('Плановая дата (ГГГГ-ММ-ДД)', format='%Y-%m-%d', validators=[Optional()])
+    service_date = DateField('Фактическая дата выполнения (ГГГГ-ММ-ДД)', format='%Y-%m-%d', validators=[Optional()])
+    status_choices = [
+        ('Запланировано', 'Запланировано'),
+        ('В процессе', 'В процессе'),
+        ('Выполнено', 'Выполнено'),
+        ('Отменено', 'Отменено')
+    ]
+    status = SelectField('Статус ТО', choices=status_choices, validators=[DataRequired("Выберите статус.")], default='Запланировано')
     performed_by_id = SelectField('Выполнил (сотрудник)', coerce=int, validators=[Optional()])
-    submit = SubmitField('Добавить запись об обслуживании')
+    submit = SubmitField('Сохранить запись')
 
     def __init__(self, *args, **kwargs):
         super(ServiceRecordForm, self).__init__(*args, **kwargs)
-        # Динамически заполняем список исполнителей
-        # Это должно выполняться в контексте приложения, чтобы db был доступен.
-        # Если форма создается вне контекста, этот код вызовет ошибку.
-        # Лучше передавать choices из view-функции или использовать QuerySelectField.
-        # Для демонстрации, как это могло бы работать, если db доступен:
-        try:
-            tech_roles_query = db.session.query(Role).filter(Role.name.in_(['Admin', 'TechSpecialist']))
-            tech_roles_ids = [role.id for role in tech_roles_query.all()]
+        self.performed_by_id.choices = [(0, '-- Не выбран --')] # Заглушка, заполняется в роуте
 
-            if tech_roles_ids:
-                performers_query = db.session.query(User).filter(User.role_id.in_(tech_roles_ids)).order_by(User.last_name, User.first_name)
-                self.performed_by_id.choices = [(0, '-- Не выбран (внешний исполнитель) --')] + [(user.id, user.full_name) for user in performers_query.all()]
-            else:
-                self.performed_by_id.choices = [(0, '-- Нет доступных исполнителей --')]
-        except Exception as e:
-            # Если db еще не инициализирован или нет контекста приложения,
-            # просто оставляем choices пустыми или с заглушкой.
-            # Окончательное заполнение будет в роуте.
-            print(f"Ошибка при заполнении исполнителей в ServiceRecordForm: {e}")
-            self.performed_by_id.choices = [(0, '-- Ошибка загрузки исполнителей --')]
+    def validate_service_date(form, field):
+        if form.status.data == 'Выполнено' and not field.data:
+            raise ValidationError('Для "Выполнено" нужна фактическая дата.')
+        if field.data and form.status.data == 'Запланировано':
+            raise ValidationError('Если факт. дата есть, статус не "Запланировано".')
+        if field.data and form.planned_date.data and field.data < form.planned_date.data:
+             raise ValidationError('Факт. дата не м.б. раньше плановой.')
+
+    def validate_planned_date(form, field):
+        if form.status.data == 'Запланировано' and not field.data:
+            raise ValidationError('Для "Запланировано" нужна плановая дата.')

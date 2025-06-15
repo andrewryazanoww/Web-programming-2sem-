@@ -6,48 +6,76 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>{{ title if title else "Список оборудования" }}</h1>
-        {# Кнопка "Добавить оборудование" только для админов #}
-        {% if current_user.is_authenticated and current_user.is_admin() %}
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h1 class="mb-2 mb-md-0">{{ title if title else "Список оборудования" }}</h1>
+        {% if can('create_equipment') %}
             <a href="{{ url_for('equipment.new') }}" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i> Добавить оборудование
+                ➕ Добавить оборудование
             </a>
         {% endif %}
     </div>
 
-    {# TODO: Форма фильтрации (позже) #}
-    {#
-    <form method="GET" action="{{ url_for('equipment.index') }}" class="mb-4 p-3 border rounded bg-light">
+    <form method="GET" action="{{ url_for('equipment.index') }}" class="mb-4 p-3 border rounded bg-light shadow-sm">
+        <h5 class="mb-3">Фильтры</h5>
         <div class="row g-3">
-            <div class="col-md-4">
-                <label for="filter_name" class="form-label">Название</label>
-                <input type="text" class="form-control form-control-sm" id="filter_name" name="name" value="{{ request.args.get('name', '') }}">
+            <div class="col-md-3">
+                <label for="name_filter" class="form-label">Название</label>
+                <input type="text" name="name_filter" id="name_filter" class="form-control form-control-sm" value="{{ current_filters.name_filter or '' }}">
             </div>
             <div class="col-md-3">
-                <label for="filter_category_id" class="form-label">Категория</label>
-                <select class="form-select form-select-sm" id="filter_category_id" name="category_id">
+                <label for="category_id_filter" class="form-label">Категория</label>
+                <select name="category_id" id="category_id_filter" class="form-select form-select-sm">
                     <option value="">Все категории</option>
                     {% for category in categories %}
-                        <option value="{{ category.id }}" {% if request.args.get('category_id')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+                        <option value="{{ category.id }}" {% if current_filters.category_id|int == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="filter_status" class="form-label">Статус</label>
-                <select class="form-select form-select-sm" id="filter_status" name="status">
+                <label for="status_filter" class="form-label">Статус</label>
+                <select name="status" id="status_filter" class="form-select form-select-sm">
                     <option value="">Все статусы</option>
                     {% for status_val in statuses %}
-                        <option value="{{ status_val }}" {% if request.args.get('status') == status_val %}selected{% endif %}>{{ status_val }}</option>
+                        <option value="{{ status_val }}" {% if current_filters.status == status_val %}selected{% endif %}>
+                            {{ status_val }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary btn-sm w-100">Применить фильтр</button>
+             <div class="col-md-3">
+                {# Сортировка - можно будет улучшить в будущем #}
+                <label for="sort_by_filter" class="form-label">Сортировать по</label>
+                <select name="sort_by" id="sort_by_filter" class="form-select form-select-sm">
+                    <option value="purchase_date" {% if current_filters.sort_by == 'purchase_date' %}selected{% endif %}>Дате покупки</option>
+                    <option value="name" {% if current_filters.sort_by == 'name' %}selected{% endif %}>Названию</option>
+                    <option value="category_name" {% if current_filters.sort_by == 'category_name' %}selected{% endif %}>Категории</option>
+                    <option value="status" {% if current_filters.sort_by == 'status' %}selected{% endif %}>Статусу</option>
+                </select>
+                 <select name="sort_direction" class="form-select form-select-sm mt-1">
+                    <option value="desc" {% if current_filters.sort_direction == 'desc' %}selected{% endif %}>По убыванию</option>
+                    <option value="asc" {% if current_filters.sort_direction == 'asc' %}selected{% endif %}>По возрастанию</option>
+                </select>
+            </div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-3">
+                <label for="purchase_date_from_filter" class="form-label">Дата покупки от:</label>
+                <input type="date" name="purchase_date_from" id="purchase_date_from_filter" class="form-control form-control-sm" value="{{ current_filters.purchase_date_from or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="purchase_date_to_filter" class="form-label">Дата покупки до:</label>
+                <input type="date" name="purchase_date_to" id="purchase_date_to_filter" class="form-control form-control-sm" value="{{ current_filters.purchase_date_to or '' }}">
+            </div>
+             <div class="col-md-3 align-self-end">
+                <button type="submit" class="btn btn-info btn-sm w-100">Применить</button>
+            </div>
+            <div class="col-md-3 align-self-end">
+                <a href="{{ url_for('equipment.index') }}" class="btn btn-outline-secondary btn-sm w-100">Сбросить</a>
             </div>
         </div>
     </form>
-    #}
 
     {% if equipment_list %}
     <div class="table-responsive">
@@ -60,44 +88,54 @@
                     <th>Категория</th>
                     <th>Статус</th>
                     <th>Дата покупки</th>
+                    <th>Ответственные</th>
                     <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in equipment_list %}
                 <tr>
-                    <td>{{ loop.index + pagination.first -1 if pagination else loop.index }}</td>
-                    <td>
-                        <a href="{{ url_for('equipment.show', equipment_id=item.id) }}">{{ item.name }}</a>
-                    </td>
+                    <td>{{ loop.index + pagination.first -1 if pagination and pagination.first else loop.index }}</td>
+                    <td><a href="{{ url_for('equipment.show', equipment_id=item.id) }}">{{ item.name }}</a></td>
                     <td>{{ item.inventory_number }}</td>
                     <td>{{ item.category.name if item.category else 'N/A' }}</td>
                     <td>
-                        {% if item.status == 'В эксплуатации' %}
-                            <span class="badge bg-success">{{ item.status }}</span>
-                        {% elif item.status == 'На ремонте' %}
-                            <span class="badge bg-warning text-dark">{{ item.status }}</span>
-                        {% elif item.status == 'Списано' %}
-                            <span class="badge bg-danger">{{ item.status }}</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ item.status }}</span>
+                        {% if item.status == 'В эксплуатации' %}<span class="badge text-bg-success">{{ item.status }}</span>
+                        {% elif item.status == 'На ремонте' %}<span class="badge text-bg-warning">{{ item.status }}</span>
+                        {% elif item.status == 'Списано' %}<span class="badge text-bg-danger">{{ item.status }}</span>
+                        {% else %}<span class="badge text-bg-secondary">{{ item.status }}</span>
                         {% endif %}
                     </td>
                     <td>{{ item.purchase_date.strftime('%d.%m.%Y') if item.purchase_date else '' }}</td>
                     <td>
-                        <a href="{{ url_for('equipment.show', equipment_id=item.id) }}" class="btn btn-sm btn-outline-info me-1" title="Просмотр">👁️</a>
-                        {% if current_user.is_authenticated and current_user.is_admin() %}
-                            <a href="{{ url_for('equipment.edit', equipment_id=item.id) }}" class="btn btn-sm btn-outline-warning me-1" title="Редактировать">✏️</a>
-                            <button type="button" class="btn btn-sm btn-outline-danger me-1" title="Удалить"
-                                    data-bs-toggle="modal" data-bs-target="#deleteEquipmentModal"
-                                    data-equipment-id="{{ item.id }}"
-                                    data-equipment-name="{{ item.name }}">
-                                🗑️
-                            </button>
+                        {% if item.responsible_persons %}
+                            {% for person in item.responsible_persons %}
+                                <small>{{ person.full_name }}{% if not loop.last %},<br>{% endif %}</small>
+                            {% endfor %}
+                        {% else %}
+                            <small class="text-muted">-</small>
                         {% endif %}
-                        {% if current_user.is_authenticated and current_user.role and (current_user.is_admin() or current_user.is_tech_specialist()) %}
-                            <a href="{{ url_for('service.add_service_record', equipment_id=item.id) }}" class="btn btn-sm btn-outline-success" title="Добавить запись об обслуживании">🛠️</a>
-                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            {% if can('view_equipment_detail', item.id) %}
+                                <a href="{{ url_for('equipment.show', equipment_id=item.id) }}" class="btn btn-outline-info" title="Просмотр">👁️</a>
+                            {% endif %}
+                            {% if can('edit_equipment', item.id) %}
+                                <a href="{{ url_for('equipment.edit', equipment_id=item.id) }}" class="btn btn-outline-warning" title="Редактировать">✏️</a>
+                            {% endif %}
+                            {% if can('delete_equipment', item.id) %}
+                                <button type="button" class="btn btn-outline-danger" title="Удалить"
+                                        data-bs-toggle="modal" data-bs-target="#deleteEquipmentModal"
+                                        data-equipment-id="{{ item.id }}"
+                                        data-equipment-name="{{ item.name }}">
+                                    🗑️
+                                </button>
+                            {% endif %}
+                            {% if can('add_service_record', item.id) %}
+                                <a href="{{ url_for('service.add_service_record', equipment_id=item.id) }}" class="btn btn-outline-success" title="Обслуживание">🛠️</a>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -110,27 +148,26 @@
     {% else %}
     <div class="alert alert-info mt-3" role="alert">
         Список оборудования пуст.
-        {% if current_user.is_authenticated and current_user.is_admin() %}
+        {% if can('create_equipment') %}
             Вы можете <a href="{{ url_for('equipment.new') }}" class="alert-link">добавить новое оборудование</a>.
         {% endif %}
     </div>
     {% endif %}
 </div>
 
-{# Модальное окно для подтверждения удаления оборудования #}
 <div class="modal fade" id="deleteEquipmentModal" tabindex="-1" aria-labelledby="deleteEquipmentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-danger text-white">
         <h5 class="modal-title" id="deleteEquipmentModalLabel">Удаление оборудования</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         Вы уверены, что хотите удалить оборудование <strong id="deleteEquipmentNameModal"></strong>?
         <p class="text-danger mt-2"><small>Внимание: будут удалены все связанные записи об обслуживании и фотография!</small></p>
       </div>
       <div class="modal-footer">
-        <form id="deleteEquipmentFormModal" method="POST" action="#"> {# action будет установлен JS #}
+        <form id="deleteEquipmentFormModal" method="POST" action="#">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет, отмена</button>
           <button type="submit" class="btn btn-danger">Да, удалить</button>
         </form>
@@ -140,24 +177,18 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-{{ super() }}
+{% block scripts_extra %}
 <script>
-    // JS для модального окна удаления оборудования
     const deleteModalElement = document.getElementById('deleteEquipmentModal');
     if (deleteModalElement) {
         deleteModalElement.addEventListener('show.bs.modal', function (event) {
             const button = event.relatedTarget;
             const equipmentId = button.getAttribute('data-equipment-id');
             const equipmentName = button.getAttribute('data-equipment-name');
-            
             const modalNameElement = deleteModalElement.querySelector('#deleteEquipmentNameModal');
             const deleteForm = deleteModalElement.querySelector('#deleteEquipmentFormModal');
-
             if (modalNameElement) modalNameElement.textContent = equipmentName;
-            // Важно: используем url_for, если это возможно (нужно передать его в JS)
-            // или формируем URL вручную, как здесь.
-            if (deleteForm) deleteForm.action = `/equipment/${equipmentId}/delete`;
+            if (deleteForm) deleteForm.action = `{{ url_for('equipment.index') }}${equipmentId}/delete`;
         });
     }
 </script>

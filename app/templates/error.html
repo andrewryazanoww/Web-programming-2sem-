@@ -1,0 +1,16 @@
+{# app/templates/error.html #}
+{% extends "base.html" %}
+
+{% block title %}Ошибка {{ status_code if status_code else '' }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="py-5">
+        <h1 class="display-1">{{ status_code if status_code else 'Ошибка' }}</h1>
+        <p class="lead">{{ error_message|safe if error_message else 'Произошла непредвиденная ошибка на сервере.' }}</p>
+        <hr class="my-4">
+        <p>Пожалуйста, попробуйте вернуться на главную страницу или обновить текущую страницу через некоторое время.</p>
+        <a href="{{ url_for('main_bp.index') }}" class="btn btn-primary btn-lg mt-3">На главную</a>
+    </div>
+</div>
+{% endblock %}

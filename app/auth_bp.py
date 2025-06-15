@@ -15,7 +15,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     # Если пользователь уже аутентифицирован, перенаправляем на главную
     if current_user.is_authenticated:
-        return redirect(url_for('main_bp.index')) # Используем main_bp.index
+        return redirect(url_for('main_bp.index')) # Используем main_bp.index для главной
 
     form = LoginForm() # Создаем экземпляр нашей формы
     if form.validate_on_submit(): # Если форма отправлена и валидна
@@ -36,9 +36,8 @@ def login():
             next_page = request.args.get('next')
             # Безопасное перенаправление: только на относительные URL внутри сайта
             if next_page and not next_page.startswith(('/', 'http://', 'https://')):
-                # Если next_page некорректный, перенаправляем на главную
-                current_app.logger.warning(f"Попытка небезопасного редиректа на: {next_page}")
-                next_page = url_for('main_bp.index')
+                current_app.logger.warning(f"Попытка небезопасного редиректа на: {next_page} после логина. Перенаправляем на главную.")
+                next_page = url_for('main_bp.index') # Безопасный fallback
             return redirect(next_page or url_for('main_bp.index'))
         else:
             flash('Введены неверные логин и/или пароль.', 'danger')
@@ -49,5 +48,5 @@ def login():
 @login_required # Только аутентифицированный пользователь может выйти
 def logout():
     logout_user() # Завершаем сессию
-    flash('Вы успешно вышли из системы.', 'info')
+    flash('Вы успешно вышли из системы.', 'info') # Изменил категорию на info для разнообразия
     return redirect(url_for('main_bp.index')) # Перенаправляем на главную

@@ -1,0 +1,234 @@
+{# app/templates/service/calendar.html #}
+{% extends "base.html" %}
+
+{% block title %}{{ title if title else "Календарь ТО" }}{% endblock %}
+
+{% block head_extra_css %}
+    {# FullCalendar CSS - используем CDN #}
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <style>
+        #calendar-container { /* Добавим контейнер для возможного ограничения ширины */
+            max-width: 1200px; /* Максимальная ширина календаря */
+            margin: 20px auto;  /* Центрирование */
+            padding: 0 15px;   /* Отступы по бокам */
+        }
+        #calendar {
+            /* Размеры будут управляться FullCalendar, но можно задать min-height */
+            min-height: 600px;
+        }
+        /* Стили для событий (можно кастомизировать) */
+        .fc-event-main {
+            font-size: 0.85em;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 2px 4px; /* Небольшие внутренние отступы */
+        }
+        .fc-event-title {
+            font-weight: bold;
+        }
+        .event-status-Запланировано { background-color: #0d6efd; border-color: #0d6efd; color: white !important; }
+        .event-status-В_процессе { background-color: #ffc107; border-color: #ffc107; color: #212529 !important;}
+        .event-status-Выполнено { background-color: #198754; border-color: #198754; color: white !important; }
+        .event-status-Отменено { background-color: #6c757d; border-color: #6c757d; text-decoration: line-through; color: white !important; }
+        /* Убираем подчеркивание у ссылок внутри событий календаря, если они есть */
+        .fc-daygrid-event-harness a, .fc-timegrid-event-harness a, .fc-list-event-harness a,
+        .fc-event-main-frame a {
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+        .modal-body p {
+            margin-bottom: 0.5rem;
+        }
+        #eventDescription { /* Стили для блока описания в модальном окне */
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4" id="calendar-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title if title else "Календарь технического обслуживания" }}</h1>
+        {# Можно добавить кнопку, например, для фильтрации календаря #}
+    </div>
+    <hr>
+
+    <div id='calendar'>
+        {# Сообщение о загрузке, которое скроется, когда календарь отрендерится #}
+        <p class="text-center text-muted p-5">Загрузка календаря...</p>
+    </div>
+
+    {# Модальное окно для деталей события #}
+    <div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventDetailModalLabel">Детали обслуживания</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Оборудование:</strong> <span id="eventEquipment"></span></p>
+                    <p><strong>Тип работ:</strong> <span id="eventType"></span></p>
+                    <p><strong>Описание:</strong></p>
+                    <div id="eventDescription"></div>
+                    <p class="mt-2"><strong>Статус:</strong> <span id="eventStatus" class="fw-bold"></span></p>
+                    <p><strong>Плановая дата:</strong> <span id="eventPlannedDate"></span></p>
+                    <p><strong>Фактическая дата выполнения:</strong> <span id="eventActualDate"></span></p>
+                    <p><strong>Исполнитель:</strong> <span id="eventPerformer"></span></p>
+                    <a href="#" id="eventEquipmentLink" class="btn btn-sm btn-outline-primary mt-3">Перейти к оборудованию</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+    <div class="row">
+        <div class="col">
+            <h3>Ближайшие плановые работы (статус "Запланировано")</h3>
+            {% set upcoming_planned_tasks = [] %}
+            {% for record in all_service_records %}
+                {% if record.status == 'Запланировано' and record.planned_date and record.planned_date >= now.date() %}
+                    {% set _ = upcoming_planned_tasks.append(record) %}
+                {% endif %}
+            {% endfor %}
+
+            {% if upcoming_planned_tasks %}
+                <ul class="list-group shadow-sm">
+                    {% for task in upcoming_planned_tasks|sort(attribute='planned_date') %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                            <div>
+                                <a href="{{ url_for('equipment.show', equipment_id=task.equipment_id) }}" class="text-decoration-none">
+                                    <strong>{{ task.equipment.name if task.equipment else 'Оборудование не найдено' }}</strong>
+                                </a> - {{ task.service_type }}
+                                <br><small class="text-muted">Плановая дата: {{ task.planned_date.strftime('%d.%m.%Y') }}</small>
+                            </div>
+                            <a href="{{ url_for('equipment.show', equipment_id=task.equipment_id) }}" class="btn btn-sm btn-outline-primary mt-1 mt-md-0">К оборудованию</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">Нет предстоящих запланированных работ.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ru.js'></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var eventsData = [];
+
+            console.log("Начинаем формирование событий для календаря...");
+
+            {% for record in all_service_records %}
+                var eventDateStr = null; // Используем строку для даты
+                var eventTitle = '{{ record.equipment.name | e if record.equipment else "Оборудование?" }} - {{ record.service_type | e }}';
+
+                // Логика определения даты для события (planned_date или service_date)
+                {% if record.planned_date %}
+                    eventDateStr = '{{ record.planned_date.isoformat() }}';
+                {% elif record.service_date %}
+                    // Убедимся, что service_date существует перед вызовом isoformat
+                    eventDateStr = '{{ record.service_date.isoformat().split("T")[0] if record.service_date else "" }}';
+                {% endif %}
+
+                // Отладочный вывод для каждой записи
+                console.log("Запись ID {{ record.id }}: planned_date={{ record.planned_date }}, service_date={{ record.service_date }}, итоговая eventDateStr=" + eventDateStr);
+
+                if (eventDateStr && eventDateStr !== "") { // Добавляем событие только если есть корректная дата
+                    eventsData.push({
+                        id: '{{ record.id }}', // ID записи ServiceHistory
+                        title: eventTitle,
+                        start: eventDateStr, // Дата начала события
+                        // end: 'YYYY-MM-DD', // Если событие длится несколько дней
+                        allDay: true, // Помечаем как событие на весь день
+                        className: 'event-status-{{ record.status.replace(" ", "_") if record.status else "" }}',
+                        extendedProps: {
+                            equipmentName: '{{ record.equipment.name | e if record.equipment else "Н/Д" }} (Инв.№ {{ record.equipment.inventory_number | e if record.equipment else "Н/Д" }})',
+                            serviceType: '{{ record.service_type | e }}',
+                            description: `{{ record.description | e | replace("\\n", "<br>") | replace("\\r", "") | safe }}`,
+                            status: '{{ record.status }}',
+                            plannedDate: '{{ record.planned_date.strftime("%d.%m.%Y") if record.planned_date else "Не указана" }}',
+                            actualDate: '{{ record.service_date.strftime("%d.%m.%Y %H:%M") if record.service_date else "Не выполнено" }}',
+                            performer: '{{ record.performed_by.full_name if record.performed_by else "Не назначен" }}',
+                            equipmentUrl: '{{ url_for("equipment.show", equipment_id=record.equipment_id) }}'
+                        }
+                    });
+                } else {
+                    console.warn("Запись ID {{ record.id }} пропущена, т.к. нет корректной даты (planned_date или service_date).");
+                }
+            {% endfor %}
+
+            console.log("Сформированный массив событий (eventsData):", JSON.stringify(eventsData, null, 2));
+
+            if (calendarEl) {
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'ru',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,listWeek' // Убрал timeGridDay для компактности
+                    },
+                    events: eventsData,
+                    eventTimeFormat: { // Формат времени для событий в видах timeGrid
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        meridiem: false,
+                        hour12: false
+                    },
+                    // displayEventEnd: false, // Не всегда нужно, FullCalendar умный
+                    eventDidMount: function(info) {
+                        // Можно добавить всплывающие подсказки Bootstrap Tooltip к событиям
+                        // if (info.event.title) {
+                        //     var tooltip = new bootstrap.Tooltip(info.el, {
+                        //         title: info.event.extendedProps.description || info.event.title,
+                        //         placement: 'top',
+                        //         trigger: 'hover',
+                        //         container: 'body',
+                        //         html: true
+                        //     });
+                        // }
+                    },
+                    eventClick: function(info) {
+                        info.jsEvent.preventDefault(); // Предотвращаем переход по URL, если он есть в событии
+
+                        document.getElementById('eventEquipment').textContent = info.event.extendedProps.equipmentName;
+                        document.getElementById('eventType').textContent = info.event.extendedProps.serviceType;
+                        document.getElementById('eventDescription').innerHTML = info.event.extendedProps.description;
+                        document.getElementById('eventStatus').textContent = info.event.extendedProps.status;
+                        document.getElementById('eventPlannedDate').textContent = info.event.extendedProps.plannedDate;
+                        document.getElementById('eventActualDate').textContent = info.event.extendedProps.actualDate;
+                        document.getElementById('eventPerformer').textContent = info.event.extendedProps.performer;
+                        document.getElementById('eventEquipmentLink').href = info.event.extendedProps.equipmentUrl;
+
+                        var eventModal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
+                        eventModal.show();
+                    }
+                });
+                try {
+                    calendar.render();
+                    console.log("FullCalendar.render() вызван.");
+                } catch (e) {
+                    console.error("Ошибка при рендеринге FullCalendar:", e);
+                    calendarEl.innerHTML = '<p class="text-danger text-center">Не удалось загрузить календарь. Проверьте консоль на ошибки.</p>';
+                }
+            } else {
+                console.error("Элемент #calendar не найден на странице!");
+            }
+        });
+    </script>
+{% endblock %}
