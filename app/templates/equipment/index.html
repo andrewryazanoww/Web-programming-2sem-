@@ -16,7 +16,7 @@
     </div>
 
     <form method="GET" action="{{ url_for('equipment.index') }}" class="mb-4 p-3 border rounded bg-light shadow-sm">
-        <h5 class="mb-3">Фильтры</h5>
+        <h5 class="mb-3">Фильтры и сортировка</h5>
         <div class="row g-3">
             <div class="col-md-3">
                 <label for="name_filter" class="form-label">Название</label>
@@ -27,7 +27,7 @@
                 <select name="category_id" id="category_id_filter" class="form-select form-select-sm">
                     <option value="">Все категории</option>
                     {% for category in categories %}
-                        <option value="{{ category.id }}" {% if current_filters.category_id|int == category.id %}selected{% endif %}>
+                        <option value="{{ category.id }}" {% if current_filters.category_id|string == category.id|string %}selected{% endif %}>
                             {{ category.name }}
                         </option>
                     {% endfor %}
@@ -45,7 +45,6 @@
                 </select>
             </div>
              <div class="col-md-3">
-                {# Сортировка - можно будет улучшить в будущем #}
                 <label for="sort_by_filter" class="form-label">Сортировать по</label>
                 <select name="sort_by" id="sort_by_filter" class="form-select form-select-sm">
                     <option value="purchase_date" {% if current_filters.sort_by == 'purchase_date' %}selected{% endif %}>Дате покупки</option>
@@ -77,7 +76,7 @@
         </div>
     </form>
 
-    {% if equipment_list %}
+    {# ИСПРАВЛЕНИЕ: Обернем таблицу и сообщение "Список пуст" в один блок #}
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle">
             <thead class="table-light">
@@ -88,73 +87,80 @@
                     <th>Категория</th>
                     <th>Статус</th>
                     <th>Дата покупки</th>
-                    <th>Ответственные</th>
-                    <th>Действия</th>
+                    <th>Ответственное лицо</th> {# Заголовок здесь #}
+                    <th>Действия</th>      {# Заголовок здесь #}
                 </tr>
             </thead>
             <tbody>
-                {% for item in equipment_list %}
-                <tr>
-                    <td>{{ loop.index + pagination.first -1 if pagination and pagination.first else loop.index }}</td>
-                    <td><a href="{{ url_for('equipment.show', equipment_id=item.id) }}">{{ item.name }}</a></td>
-                    <td>{{ item.inventory_number }}</td>
-                    <td>{{ item.category.name if item.category else 'N/A' }}</td>
-                    <td>
-                        {% if item.status == 'В эксплуатации' %}<span class="badge text-bg-success">{{ item.status }}</span>
-                        {% elif item.status == 'На ремонте' %}<span class="badge text-bg-warning">{{ item.status }}</span>
-                        {% elif item.status == 'Списано' %}<span class="badge text-bg-danger">{{ item.status }}</span>
-                        {% else %}<span class="badge text-bg-secondary">{{ item.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ item.purchase_date.strftime('%d.%m.%Y') if item.purchase_date else '' }}</td>
-                    <td>
-                        {% if item.responsible_persons %}
-                            {% for person in item.responsible_persons %}
-                                <small>{{ person.full_name }}{% if not loop.last %},<br>{% endif %}</small>
-                            {% endfor %}
-                        {% else %}
-                            <small class="text-muted">-</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            {% if can('view_equipment_detail', item.id) %}
-                                <a href="{{ url_for('equipment.show', equipment_id=item.id) }}" class="btn btn-outline-info" title="Просмотр">👁️</a>
+                {% if equipment_list %}
+                    {% for item in equipment_list %}
+                    <tr>
+                        <td>{{ loop.index + pagination.first -1 if pagination and pagination.first else loop.index }}</td>
+                        <td><a href="{{ url_for('equipment.show', equipment_id=item.id) }}">{{ item.name }}</a></td>
+                        <td>{{ item.inventory_number }}</td>
+                        <td>{{ item.category.name if item.category else 'N/A' }}</td>
+                        <td>
+                            {% if item.status == 'В эксплуатации' %}<span class="badge text-bg-success">{{ item.status }}</span>
+                            {% elif item.status == 'На ремонте' %}<span class="badge text-bg-warning">{{ item.status }}</span>
+                            {% elif item.status == 'Списано' %}<span class="badge text-bg-danger">{{ item.status }}</span>
+                            {% else %}<span class="badge text-bg-secondary">{{ item.status }}</span>
                             {% endif %}
-                            {% if can('edit_equipment', item.id) %}
-                                <a href="{{ url_for('equipment.edit', equipment_id=item.id) }}" class="btn btn-outline-warning" title="Редактировать">✏️</a>
+                        </td>
+                        <td>{{ item.purchase_date.strftime('%d.%m.%Y') if item.purchase_date else '' }}</td>
+                        <td>
+                            {% if item.responsible_user %}
+                                <small>{{ item.responsible_user.full_name }}</small>
+                            {% else %}
+                                <small class="text-muted">-</small>
                             {% endif %}
-                            {% if can('delete_equipment', item.id) %}
-                                <button type="button" class="btn btn-outline-danger" title="Удалить"
-                                        data-bs-toggle="modal" data-bs-target="#deleteEquipmentModal"
-                                        data-equipment-id="{{ item.id }}"
-                                        data-equipment-name="{{ item.name }}">
-                                    🗑️
-                                </button>
-                            {% endif %}
-                            {% if can('add_service_record', item.id) %}
-                                <a href="{{ url_for('service.add_service_record', equipment_id=item.id) }}" class="btn btn-outline-success" title="Обслуживание">🛠️</a>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                {% if can('view_equipment_detail', item.id) %}
+                                    <a href="{{ url_for('equipment.show', equipment_id=item.id) }}" class="btn btn-outline-info" title="Просмотр">👁️</a>
+                                {% endif %}
+                                {% if can('edit_equipment', item.id) %}
+                                    <a href="{{ url_for('equipment.edit', equipment_id=item.id) }}" class="btn btn-outline-warning" title="Редактировать">✏️</a>
+                                {% endif %}
+                                {% if can('delete_equipment', item.id) %}
+                                    <button type="button" class="btn btn-outline-danger" title="Удалить"
+                                            data-bs-toggle="modal" data-bs-target="#deleteEquipmentModal"
+                                            data-equipment-id="{{ item.id }}"
+                                            data-equipment-name="{{ item.name }}">
+                                        🗑️
+                                    </button>
+                                {% endif %}
+                                {% if can('add_service_record', item.id) %}
+                                    <a href="{{ url_for('service.add_service_record', equipment_id=item.id) }}" class="btn btn-outline-success" title="Обслуживание">🛠️</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    {# Этот блок выполнится, если equipment_list пуст #}
+                    <tr>
+                        <td colspan="8" class="text-center"> {# Увеличил colspan, чтобы охватить все колонки #}
+                            <div class="alert alert-info mt-3" role="alert">
+                                Список оборудования пуст.
+                                {% if can('create_equipment') %}
+                                    Вы можете <a href="{{ url_for('equipment.new') }}" class="alert-link">добавить новое оборудование</a>.
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
-    {% if pagination %}
+
+    {# Пагинация отображается только если есть что пагинировать #}
+    {% if pagination and pagination.pages > 1 %}
         {{ render_pagination(pagination, 'equipment.index', params=request.args) }}
-    {% endif %}
-    {% else %}
-    <div class="alert alert-info mt-3" role="alert">
-        Список оборудования пуст.
-        {% if can('create_equipment') %}
-            Вы можете <a href="{{ url_for('equipment.new') }}" class="alert-link">добавить новое оборудование</a>.
-        {% endif %}
-    </div>
     {% endif %}
 </div>
 
+{# Модальное окно для подтверждения удаления оборудования #}
 <div class="modal fade" id="deleteEquipmentModal" tabindex="-1" aria-labelledby="deleteEquipmentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -167,7 +173,7 @@
         <p class="text-danger mt-2"><small>Внимание: будут удалены все связанные записи об обслуживании и фотография!</small></p>
       </div>
       <div class="modal-footer">
-        <form id="deleteEquipmentFormModal" method="POST" action="#">
+        <form id="deleteEquipmentFormModal" method="POST" action="#"> {# action будет установлен JS #}
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет, отмена</button>
           <button type="submit" class="btn btn-danger">Да, удалить</button>
         </form>
@@ -178,6 +184,7 @@
 {% endblock %}
 
 {% block scripts_extra %}
+{{ super() if super }} {# Вызов super() только если он определен в родительском блоке #}
 <script>
     const deleteModalElement = document.getElementById('deleteEquipmentModal');
     if (deleteModalElement) {
@@ -188,7 +195,8 @@
             const modalNameElement = deleteModalElement.querySelector('#deleteEquipmentNameModal');
             const deleteForm = deleteModalElement.querySelector('#deleteEquipmentFormModal');
             if (modalNameElement) modalNameElement.textContent = equipmentName;
-            if (deleteForm) deleteForm.action = `{{ url_for('equipment.index') }}${equipmentId}/delete`;
+            // Формируем URL для удаления
+            if (deleteForm) deleteForm.action = `{{ url_for('equipment.index').rstrip('/') }}/${equipmentId}/delete`;
         });
     }
 </script>

@@ -7,12 +7,14 @@ from flask import url_for, current_app
 from sqlalchemy import event, Enum as SQLAlchemyEnum
 from .extensions import db
 
-equipment_responsible_persons = db.Table('equipment_responsible_persons',
-    db.Column('id', db.Integer, primary_key=True, autoincrement=True),
-    db.Column('equipment_id', db.Integer, db.ForeignKey('equipment.id', ondelete='CASCADE'), nullable=False),
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
-    db.UniqueConstraint('equipment_id', 'user_id', name='uq_equipment_user_responsible')
-)
+# УДАЛЯЕМ или комментируем определение таблицы equipment_responsible_persons,
+# так как теперь у оборудования будет только ОДИН ответственный (связь многие-к-одному)
+# equipment_responsible_persons = db.Table('equipment_responsible_persons',
+#     db.Column('id', db.Integer, primary_key=True, autoincrement=True),
+#     db.Column('equipment_id', db.Integer, db.ForeignKey('equipment.id', ondelete='CASCADE'), nullable=False),
+#     db.Column('user_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+#     db.UniqueConstraint('equipment_id', 'user_id', name='uq_equipment_user_responsible')
+# )
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -35,6 +37,10 @@ class User(db.Model, UserMixin):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     performed_services = db.relationship('ServiceHistory', backref='performed_by', lazy='dynamic', foreign_keys='ServiceHistory.performed_by_id')
+    # ИЗМЕНЕНИЕ: Связь "один пользователь - много оборудования, за которое он ответственен"
+    # backref 'responsible_user' будет создан в Equipment
+    assigned_equipment = db.relationship('Equipment', backref='responsible_user', lazy='dynamic', foreign_keys='Equipment.responsible_user_id')
+
     def set_password(self, password): self.password_hash = generate_password_hash(password)
     def check_password(self, password): return check_password_hash(self.password_hash, password)
     @property
@@ -44,6 +50,7 @@ class User(db.Model, UserMixin):
     def is_tech_specialist(self): return self.role and self.role.name == 'TechSpecialist'
 
 class Image(db.Model):
+    # ... (Код модели Image без изменений, как в предыдущем полном файле) ...
     __tablename__ = 'images'
     id = db.Column(db.String(100), primary_key=True)
     file_name = db.Column(db.String(100), nullable=False)
@@ -57,12 +64,14 @@ class Image(db.Model):
     def url(self): return url_for('main_bp.image_file', image_id=self.id, _external=False)
 
 class Category(db.Model):
+    # ... (Код модели Category без изменений) ...
     __tablename__ = 'categories'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text, nullable=True)
     equipment = db.relationship('Equipment', backref='category', lazy='select')
     def __repr__(self): return f'<Category {self.name}>'
+
 
 class Equipment(db.Model):
     __tablename__ = 'equipment'
@@ -76,18 +85,23 @@ class Equipment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
     image_id = db.Column(db.String(100), db.ForeignKey('images.id', ondelete='SET NULL'), nullable=True)
+
+    # ИЗМЕНЕНИЕ: Поле для ID ответственного пользователя (связь многие-к-одному)
+    responsible_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    # 'responsible_user' создается через backref в модели User.
+
+    # Связи
     image = db.relationship('Image', backref=db.backref('equipment_item', uselist=False), lazy='joined')
     service_history = db.relationship('ServiceHistory', backref='equipment', lazy='dynamic', cascade="all, delete-orphan")
-    responsible_persons = db.relationship(
-        'User',
-        secondary=equipment_responsible_persons,
-        backref=db.backref('responsible_for_equipment', lazy='dynamic'),
-        lazy='selectin'
-    )
+    # УДАЛЯЕМ старое отношение responsible_persons (многие-ко-многим)
+    # responsible_persons = db.relationship('User', secondary=equipment_responsible_persons, ...)
+
     def __repr__(self): return f'<Equipment {self.name} ({self.inventory_number})>'
 
+# Событие after_delete для Equipment остается без изменений
 @event.listens_for(Equipment, 'after_delete')
 def receive_after_delete_equipment(mapper, connection, target):
+    # ... (код события) ...
     if target.image_id:
         img_to_delete_from_db = db.session.get(Image, target.image_id)
         if img_to_delete_from_db:
@@ -105,7 +119,9 @@ def receive_after_delete_equipment(mapper, connection, target):
             else:
                 current_app.logger.info(f"Изображение {img_to_delete_from_db.id} используется, не удаляем.")
 
+
 class ServiceHistory(db.Model):
+    # ... (Код модели ServiceHistory без изменений, как в последнем полном файле) ...
     __tablename__ = 'service_history'
     id = db.Column(db.Integer, primary_key=True)
     equipment_id = db.Column(db.Integer, db.ForeignKey('equipment.id', ondelete='CASCADE'), nullable=False)

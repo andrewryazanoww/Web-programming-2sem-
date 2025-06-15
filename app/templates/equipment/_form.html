@@ -1,98 +1,60 @@
 {# app/templates/equipment/_form.html #}
-{# Этот файл включается в new.html и edit.html #}
-
-{{ form.hidden_tag() }} {# Для CSRF-токена, если Flask-WTF его использует #}
-
+{{ form.hidden_tag() }}
 <div class="row">
     <div class="col-md-6 mb-3">
         {{ form.name.label(class="form-label") }}
-        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Например: Принтер HP LaserJet Pro M402n") }}
-        {% if form.name.errors %}
-            <div class="invalid-feedback">
-                {% for error in form.name.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
+        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Принтер HP LaserJet Pro M402n") }}
+        {% if form.name.errors %}<div class="invalid-feedback">{% for error in form.name.errors %}{{ error }}{% endfor %}</div>{% endif %}
     </div>
     <div class="col-md-6 mb-3">
         {{ form.inventory_number.label(class="form-label") }}
-        {{ form.inventory_number(class="form-control" + (" is-invalid" if form.inventory_number.errors else ""), placeholder="Например: INV-00123") }}
-        {% if form.inventory_number.errors %}
-            <div class="invalid-feedback">
-                {% for error in form.inventory_number.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
+        {{ form.inventory_number(class="form-control" + (" is-invalid" if form.inventory_number.errors else ""), placeholder="INV-00123") }}
+        {% if form.inventory_number.errors %}<div class="invalid-feedback">{% for error in form.inventory_number.errors %}{{ error }}{% endfor %}</div>{% endif %}
     </div>
 </div>
-
 <div class="row">
     <div class="col-md-6 mb-3">
         {{ form.category_id.label(class="form-label") }}
         {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else "")) }}
-        {% if form.category_id.errors %}
-            <div class="invalid-feedback">
-                {% for error in form.category_id.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
+        {% if form.category_id.errors %}<div class="invalid-feedback">{% for error in form.category_id.errors %}{{ error }}{% endfor %}</div>{% endif %}
     </div>
     <div class="col-md-6 mb-3">
         {{ form.purchase_date.label(class="form-label") }}
         {{ form.purchase_date(class="form-control" + (" is-invalid" if form.purchase_date.errors else "")) }}
-        {% if form.purchase_date.errors %}
-            <div class="invalid-feedback">
-                {% for error in form.purchase_date.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
+        {% if form.purchase_date.errors %}<div class="invalid-feedback">{% for error in form.purchase_date.errors %}{{ error }}{% endfor %}</div>{% endif %}
     </div>
 </div>
-
 <div class="row">
     <div class="col-md-6 mb-3">
         {{ form.cost.label(class="form-label") }}
-        {{ form.cost(class="form-control" + (" is-invalid" if form.cost.errors else ""), placeholder="Например: 15000.50") }}
-        {% if form.cost.errors %}
-            <div class="invalid-feedback">
-                {% for error in form.cost.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
+        {{ form.cost(class="form-control" + (" is-invalid" if form.cost.errors else ""), placeholder="15000.50") }}
+        {% if form.cost.errors %}<div class="invalid-feedback">{% for error in form.cost.errors %}{{ error }}{% endfor %}</div>{% endif %}
     </div>
     <div class="col-md-6 mb-3">
-        {{ form.status.label(class="form-label d-block") }} {# d-block для корректного отображения над радиокнопками #}
+        {{ form.status.label(class="form-label d-block") }}
         {% for subfield in form.status %}
             <div class="form-check form-check-inline">
                 {{ subfield(class="form-check-input" + (" is-invalid" if form.status.errors else "")) }}
                 {{ subfield.label(class="form-check-label") }}
             </div>
         {% endfor %}
-        {% if form.status.errors %}
-            <div class="invalid-feedback d-block"> {# d-block чтобы ошибка была под группой #}
-                {% for error in form.status.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
+        {% if form.status.errors %}<div class="invalid-feedback d-block">{% for error in form.status.errors %}{{ error }}{% endfor %}</div>{% endif %}
     </div>
 </div>
-
 <div class="mb-3">
     {{ form.notes.label(class="form-label") }}
-    {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows="3", placeholder="Дополнительная информация, особенности конфигурации и т.д.") }}
-    {% if form.notes.errors %}
-        <div class="invalid-feedback">
-            {% for error in form.notes.errors %}{{ error }}{% endfor %}
-        </div>
-    {% endif %}
+    {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows="3", placeholder="Дополнительная информация...") }}
+    {% if form.notes.errors %}<div class="invalid-feedback">{% for error in form.notes.errors %}{{ error }}{% endfor %}</div>{% endif %}
 </div>
 
-{# Поле для выбора ответственных лиц #}
-{% if form.responsible_person_ids %}
+{# ИЗМЕНЕНО: Поле для выбора ОДНОГО ответственного лица #}
+{% if form.responsible_user_id %}
 <div class="mb-3">
-    {{ form.responsible_person_ids.label(class="form-label") }}
-    {# form.responsible_person_ids - это SelectMultipleField #}
-    {# multiple="multiple" делает его <select multiple> #}
-    {# style="height: ..." чтобы было видно несколько опций сразу #}
-    {{ form.responsible_person_ids(class="form-select" + (" is-invalid" if form.responsible_person_ids.errors else ""), multiple="multiple", style="height: 150px;") }}
-    <small class="form-text text-muted">Выберите одного или нескольких ответственных (используйте Ctrl/Cmd + клик для множественного выбора).</small>
-    {% if form.responsible_person_ids.errors %}
+    {{ form.responsible_user_id.label(class="form-label") }}
+    {{ form.responsible_user_id(class="form-select" + (" is-invalid" if form.responsible_user_id.errors else "")) }}
+    {% if form.responsible_user_id.errors %}
         <div class="invalid-feedback d-block">
-            {% for error in form.responsible_person_ids.errors %}{{ error }}{% endfor %}
+            {% for error in form.responsible_user_id.errors %}{{ error }}{% endfor %}
         </div>
     {% endif %}
 </div>
@@ -101,12 +63,7 @@
 <div class="mb-3">
     {{ form.image.label(class="form-label") }}
     {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else "")) }}
-    {% if form.image.errors %}
-        <div class="invalid-feedback">
-            {% for error in form.image.errors %}{{ error }}{% endfor %}
-        </div>
-    {% endif %}
-    {# current_image_url передается в шаблон edit.html и затем сюда через with context #}
+    {% if form.image.errors %}<div class="invalid-feedback">{% for error in form.image.errors %}{{ error }}{% endfor %}</div>{% endif %}
     {% if current_image_url %}
         <div class="mt-2">
             <small>Текущее изображение:</small><br>
@@ -114,8 +71,7 @@
         </div>
     {% endif %}
 </div>
-
 <div class="mt-4">
-    {{ form.submit(class="btn btn-primary px-4") }} {# Немного увеличил padding у кнопки #}
+    {{ form.submit(class="btn btn-primary px-4") }}
     <a href="{{ url_for('equipment.index') }}" class="btn btn-secondary ms-2">Отмена</a>
 </div>

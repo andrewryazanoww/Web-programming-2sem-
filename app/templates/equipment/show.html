@@ -58,14 +58,12 @@
                 <dt class="col-sm-4">Примечание:</dt>
                 <dd class="col-sm-8">{{ equipment.notes | nl2br if equipment.notes else '-' }}</dd>
 
-                <dt class="col-sm-4">Ответственные лица:</dt>
+                <dt class="col-sm-4">Ответственное лицо:</dt> {# ИСПРАВЛЕНО В ПРОШЛОМ ОТВЕТЕ - теперь единственное число #}
                 <dd class="col-sm-8">
-                    {% if equipment.responsible_persons %}
-                        {% for person in equipment.responsible_persons %}
-                            {{ person.full_name }} ({{ person.login }}){% if not loop.last %};<br>{% endif %}
-                        {% endfor %}
+                    {% if equipment.responsible_user %} {# Используем responsible_user #}
+                        {{ equipment.responsible_user.full_name }} ({{ equipment.responsible_user.login }}) {# Убраны лишние скобки вокруг full_name #}
                     {% else %}
-                        <span class="text-muted">Не назначены</span>
+                        <span class="text-muted">Не назначено</span>
                     {% endif %}
                 </dd>
             </dl>
@@ -88,11 +86,10 @@
                 {% endif %}
             </div>
 
-            {# Форма добавления записи об обслуживании (скрыта по умолчанию) #}
-            {% if service_form and can('add_service_record', equipment.id) %}
             <div class="collapse mb-4" id="addServiceRecordForm">
                 <div class="card card-body">
                     <h4>Новая запись об обслуживании</h4>
+                    {% if service_form %} {# Проверяем, передана ли форма #}
                     <form method="POST" action="{{ url_for('service.add_service_record', equipment_id=equipment.id) }}" novalidate>
                         {{ service_form.hidden_tag() }}
                         <div class="mb-3">
@@ -130,10 +127,9 @@
                         </div>
                         {{ service_form.submit(class="btn btn-primary") }}
                     </form>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
-
 
             {% if service_records %}
             <div class="table-responsive">
