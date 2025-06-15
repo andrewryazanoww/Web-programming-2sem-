@@ -4,8 +4,10 @@ from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, DateField, DecimalField, RadioField, SelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, NumberRange, ValidationError
 
-from .extensions import db # Может понадобиться для динамического заполнения choices в __init__ (хотя лучше в роутах)
-from .models import Category, User, Role # Role для ServiceRecordForm
+# Импортируем db и модели, если нужны для QuerySelectField или кастомных валидаторов
+# В данной версии форм db напрямую не используется в __init__ для choices
+from .extensions import db # Может понадобиться, если захотите вернуть логику в __init__
+from .models import Category, User, Role # Role нужна для ServiceRecordForm, если бы choices заполнялись тут
 
 # --- Формы для аутентификации ---
 class LoginForm(FlaskForm):
@@ -41,8 +43,7 @@ class EquipmentForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(EquipmentForm, self).__init__(*args, **kwargs)
-        # Заполнение choices для category_id и responsible_person_ids
-        # будет происходить в view-функциях (роутах).
+        # Заполнение choices для category_id и responsible_person_ids происходит в роутах
         pass
 
 
@@ -64,16 +65,17 @@ class ServiceRecordForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(ServiceRecordForm, self).__init__(*args, **kwargs)
-        self.performed_by_id.choices = [(0, '-- Не выбран --')] # Заглушка, заполняется в роуте
+        # Начальная установка choices. Они будут ПЕРЕЗАПОЛНЕНЫ в роуте.
+        self.performed_by_id.choices = [(0, '-- Не выбран (внешний исполнитель) --')]
 
     def validate_service_date(form, field):
         if form.status.data == 'Выполнено' and not field.data:
-            raise ValidationError('Для "Выполнено" нужна фактическая дата.')
+            raise ValidationError('Для статуса "Выполнено" необходимо указать фактическую дату выполнения.')
         if field.data and form.status.data == 'Запланировано':
-            raise ValidationError('Если факт. дата есть, статус не "Запланировано".')
+            raise ValidationError('Если указана фактическая дата выполнения, статус не может быть "Запланировано". Выберите "В процессе" или "Выполнено".')
         if field.data and form.planned_date.data and field.data < form.planned_date.data:
-             raise ValidationError('Факт. дата не м.б. раньше плановой.')
+             raise ValidationError('Фактическая дата выполнения не может быть раньше плановой даты.')
 
     def validate_planned_date(form, field):
         if form.status.data == 'Запланировано' and not field.data:
-            raise ValidationError('Для "Запланировано" нужна плановая дата.')
+            raise ValidationError('Для статуса "Запланировано" необходимо указать плановую дату.')
